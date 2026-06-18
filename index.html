@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>粽子龙舟大赛 · 端午限定</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:        #fff5e0;
+  --ink:          #221408;
+  --ink-soft:     #5b3a1e;
+  --vermilion:    #d8443c;
+  --vermilion-dk: #9c241d;
+  --gold:         #e8b647;
+  --gold-light:   #ffe39a;
+  --leaf:         #4a8a3a;
+  --leaf-deep:    #265e22;
+  --leaf-light:   #79b357;
+  --rice:         #f5e6c4;
+  --water-top:    #bfe7f2;
+  --water:        #4ea6c2;
+  --water-deep:   #1d4d63;
+  --water-foam:   #ffffff;
+  --hud-bg:       rgba(34,20,8,.78);
+  --hud-line:     rgba(232,182,71,.55);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% 110%, #ffd9a8 0%, transparent 60%),
+    radial-gradient(900px 500px at 20% 0%,  #ffe9c9 0%, transparent 55%),
+    linear-gradient(180deg, #fff4dc 0%, #fde2b8 55%, #fac98a 100%);
+  font-family:"ZCOOL KuaiLe","Ma Shan Zheng",serif;
+  color:var(--ink);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  user-select:none;
+}
+
+.frame{
+  position:relative;
+  width: 1024px;
+  height: 600px;
+  border-radius: 22px;
+  overflow:hidden;
+  box-shadow:
+    0 30px 60px -20px rgba(120, 60, 20, .35),
+    0 0 0 1px rgba(255,255,255,.6) inset,
+    0 0 0 6px #fff4dc,
+    0 0 0 8px var(--gold);
+}
+
+canvas#game{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+  background:transparent;
+}
+
+/* ===== HUD ===== */
+.hud{
+  position:absolute; inset:0;
+  pointer-events:none;
+}
+
+.hud-top{
+  position:absolute; top:18px; left:18px; right:18px;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:16px;
+}
+
+.timer{
+  background: var(--hud-bg);
+  color:#fff7df;
+  border:1.5px solid var(--hud-line);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-family:"ZCOOL QingKe HuangYou", monospace, serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  min-width: 130px;
+  text-align:center;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18);
+}
+.timer .lab{ display:block; font-size: 11px; letter-spacing:6px; opacity:.7; margin-bottom:2px;}
+
+.lanes{
+  flex: 1;
+  display:flex; flex-direction:column; gap:8px;
+  background: var(--hud-bg);
+  border-radius:12px;
+  border:1.5px solid var(--hud-line);
+  padding: 10px 14px;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18);
+}
+.lane{
+  display:flex; align-items:center; gap:10px;
+  color:#fff7df;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.lane .who{ width: 60px; }
+.lane .bar{
+  position:relative;
+  flex:1;
+  height: 14px;
+  background: rgba(255,243,204,.15);
+  border-radius: 8px;
+  overflow:hidden;
+  border:1px solid rgba(232,182,71,.35);
+}
+.lane .fill{
+  position:absolute; left:0; top:0; bottom:0;
+  width:0%;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold) 60%, var(--vermilion));
+  transition: width .12s linear;
+}
+.lane.ai .fill{
+  background: linear-gradient(90deg, #c8e0d3, #6fb09a 60%, #2f6e5a);
+}
+.lane .pct{ width: 46px; text-align:right; font-family:"ZCOOL QingKe HuangYou",monospace; font-size:14px; }
+
+.combo{
+  background: var(--hud-bg);
+  color:#fff7df;
+  border:1.5px solid var(--hud-line);
+  border-radius: 12px;
+  padding: 8px 14px;
+  min-width: 130px;
+  text-align:center;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18);
+}
+.combo .lab{ display:block; font-size:11px; letter-spacing:6px; opacity:.7; margin-bottom:2px;}
+.combo .num{
+  font-family:"ZCOOL QingKe HuangYou", monospace;
+  font-size: 28px;
+  color: var(--gold-light);
+}
+.combo.flash .num{ color:#ff8b6c; transform:scale(1.1); }
+
+.hud-bottom{
+  position:absolute; left:18px; right:18px; bottom:18px;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  gap:16px;
+}
+
+.feedback{
+  font-family:"Ma Shan Zheng", serif;
+  font-size: 64px;
+  color: var(--gold-light);
+  text-shadow:
+    -2px -2px 0 var(--vermilion-dk),
+     2px  2px 0 var(--vermilion-dk),
+     0    8px 18px rgba(60,20,0,.55);
+  position:absolute;
+  left: 50%; top: 38%;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events:none;
+  letter-spacing: 6px;
+}
+.feedback.show{
+  animation: feedback .6s ease-out;
+}
+@keyframes feedback{
+  0%   { transform: translate(-50%, -30%) scale(0.4); opacity: 0; }
+  30%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  70%  { transform: translate(-50%, -55%) scale(1.0); opacity: 1; }
+  100% { transform: translate(-50%, -70%) scale(0.9); opacity: 0; }
+}
+
+.keyhint{
+  background: var(--hud-bg);
+  border:1.5px solid var(--hud-line);
+  border-radius: 14px;
+  padding: 10px 18px;
+  display:flex; align-items:center; gap:14px;
+  color:#fff7df;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18);
+}
+.keyhint .key{
+  display:inline-block;
+  width: 44px; height:44px; line-height:38px;
+  border:2px solid var(--gold);
+  border-radius: 10px;
+  text-align:center;
+  font-family:"ZCOOL QingKe HuangYou", monospace;
+  font-size: 22px;
+  background: rgba(255,243,204,.08);
+  color:#fff7df;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,.4);
+  transition: transform .08s, background .08s;
+}
+.keyhint .key.left.lit  { background: rgba(232,182,71,.55); transform: translateY(3px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.4);}
+.keyhint .key.right.lit { background: rgba(216,68,60,.55);  transform: translateY(3px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.4);}
+.keyhint .lab{ font-size: 12px; letter-spacing:3px; opacity:.75; margin-right:6px;}
+
+/* ===== Overlays ===== */
+.overlay{
+  position:absolute; inset:0;
+  background: radial-gradient(circle at 50% 40%, rgba(255,243,204,.92), rgba(180,80,40,.92));
+  backdrop-filter: blur(2px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap: 22px;
+  z-index: 10;
+  pointer-events:auto;
+}
+.overlay.hidden{ display:none; }
+
+.title{
+  font-family:"Ma Shan Zheng", serif;
+  font-size: 84px;
+  letter-spacing: 16px;
+  color: var(--vermilion-dk);
+  text-shadow:
+    3px 3px 0 var(--gold-light),
+    6px 6px 0 var(--gold),
+    9px 9px 18px rgba(120,40,10,.4);
+  margin: 0;
+}
+.subtitle{
+  font-size: 18px;
+  letter-spacing: 10px;
+  color: var(--ink-soft);
+  margin-top: -6px;
+  text-align:center;
+}
+
+.diff-row{
+  display:flex; gap: 18px;
+  margin-top: 6px;
+}
+.diff{
+  font-family:"ZCOOL KuaiLe", serif;
+  font-size: 22px;
+  letter-spacing: 4px;
+  padding: 14px 28px;
+  border-radius: 14px;
+  border: 2.5px solid var(--vermilion-dk);
+  background: var(--paper);
+  color: var(--vermilion-dk);
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--vermilion-dk);
+  transition: transform .08s ease, box-shadow .08s ease, background .15s;
+}
+.diff:hover{ background: var(--gold-light); }
+.diff:active{ transform: translateY(4px); box-shadow: 0 2px 0 var(--vermilion-dk); }
+.diff .em{ display:block; font-size:13px; letter-spacing:6px; opacity:.65; margin-top:4px; font-family:"ZCOOL QingKe HuangYou";}
+
+.foot-tip{
+  margin-top: 8px;
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: var(--ink-soft);
+  opacity:.85;
+}
+.foot-tip kbd{
+  display:inline-block; padding: 2px 8px;
+  border:1.5px solid var(--ink-soft);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family:"ZCOOL QingKe HuangYou", monospace;
+  margin: 0 4px;
+}
+
+/* result variants */
+.overlay.win  { background: radial-gradient(circle at 50% 40%, rgba(255,235,160,.95), rgba(216,68,60,.92)); }
+.overlay.lose { background: radial-gradient(circle at 50% 40%, rgba(180,200,210,.92), rgba(40,60,80,.92)); }
+.overlay.win  .title{ color:#fff7df; text-shadow: 3px 3px 0 var(--vermilion-dk), 6px 6px 0 #6a1a14, 0 0 30px #ffd070; }
+.overlay.lose .title{ color:#fff; text-shadow: 3px 3px 0 #1d4d63, 6px 6px 0 #0d2837, 0 0 30px #6da9c2; }
+.overlay.lose .subtitle{ color:#e9f0f4; }
+
+.stats{
+  display:flex; gap: 22px;
+  background: rgba(34,20,8,.55);
+  padding: 16px 28px;
+  border-radius: 14px;
+  border: 1.5px solid var(--hud-line);
+  color:#fff7df;
+}
+.stats .item{ text-align:center; min-width: 110px;}
+.stats .item .v{ font-family:"ZCOOL QingKe HuangYou",monospace; font-size: 32px; color: var(--gold-light);}
+.stats .item .k{ font-size: 12px; letter-spacing:4px; opacity:.75;}
+
+.confetti{ position:absolute; inset:0; pointer-events:none; overflow:hidden;}
+.confetti span{
+  position:absolute; top:-20px;
+  width: 10px; height:14px;
+  background: var(--gold);
+  animation: fall 2.6s linear infinite;
+}
+.confetti span:nth-child(odd){ background: var(--vermilion); width:8px; height: 8px; border-radius: 50%; }
+.confetti span:nth-child(3n) { background: var(--leaf-light); }
+.confetti span:nth-child(5n) { background: var(--gold-light); width:14px; height:6px; }
+@keyframes fall{
+  0%   { transform: translateY(-30px) rotate(0deg); opacity:1;}
+  100% { transform: translateY(640px)  rotate(720deg); opacity:.2;}
+}
+
+/* count-down number */
+.count{
+  position:absolute; left:50%; top:50%;
+  transform: translate(-50%, -50%);
+  font-family:"Ma Shan Zheng", serif;
+  font-size: 220px;
+  color: var(--vermilion);
+  text-shadow:
+    4px 4px 0 var(--gold-light),
+    8px 8px 0 var(--gold),
+    0 0 60px rgba(255,200,100,.7);
+  z-index: 8;
+  opacity: 0;
+  pointer-events:none;
+}
+.count.show{
+  animation: count 1s ease-out;
+}
+@keyframes count{
+  0%   { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+  80%  { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame">
+
+  <canvas id="game" width="1024" height="600"></canvas>
+
+  <!-- HUD -->
+  <div class="hud" id="hud">
+
+    <div class="hud-top">
+      <div class="timer">
+        <span class="lab">用 时</span>
+        <span id="time">00.00</span>
+      </div>
+
+      <div class="lanes">
+        <div class="lane player">
+          <span class="who">🎋 你</span>
+          <div class="bar"><div class="fill" id="fillP"></div></div>
+          <span class="pct" id="pctP">0%</span>
+        </div>
+        <div class="lane ai">
+          <span class="who">🐲 对手</span>
+          <div class="bar"><div class="fill" id="fillA"></div></div>
+          <span class="pct" id="pctA">0%</span>
+        </div>
+      </div>
+
+      <div class="combo" id="combo">
+        <span class="lab">连 击</span>
+        <span class="num" id="comboN">0</span>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="hud-bottom">
+      <div class="keyhint">
+        <span class="lab">交 替 划 桨</span>
+        <span class="key left"  id="keyL">A</span>
+        <span class="key right" id="keyR">D</span>
+      </div>
+      <div class="keyhint" style="font-size:13px; letter-spacing:3px;">
+        <span>速 度</span>
+        <span style="font-family:'ZCOOL QingKe HuangYou'; color:var(--gold-light); font-size:22px;" id="spd">0.0</span>
+        <span style="opacity:.6">m/s</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="count" id="count">3</div>
+
+  <!-- Start overlay -->
+  <div class="overlay" id="startScreen">
+    <h1 class="title">粽 子 龙 舟 大 赛</h1>
+    <div class="subtitle">端 午 限 定 · 划 出 你 的 节 奏</div>
+    <div class="diff-row">
+      <button class="diff" data-diff="easy">
+        轻 松
+        <span class="em">EASY · 400m</span>
+      </button>
+      <button class="diff" data-diff="normal">
+        常 规
+        <span class="em">NORMAL · 600m</span>
+      </button>
+      <button class="diff" data-diff="hard">
+        拼 命
+        <span class="em">HARD · 800m</span>
+      </button>
+    </div>
+    <div class="foot-tip">
+      交 替 按 <kbd>A</kbd> 与 <kbd>D</kbd> &nbsp;·&nbsp; 或 <kbd>←</kbd> <kbd>→</kbd> &nbsp;·&nbsp; 越 规 律 越 快
+    </div>
+  </div>
+
+  <!-- Result overlay -->
+  <div class="overlay hidden" id="resultScreen">
+    <div class="confetti" id="confetti"></div>
+    <h1 class="title" id="resultTitle">夺 魁</h1>
+    <div class="subtitle" id="resultSub">端 午 安 康 · 龙 舟 第 一</div>
+    <div class="stats">
+      <div class="item"><div class="v" id="rTime">00.00</div><div class="k">用 时</div></div>
+      <div class="item"><div class="v" id="rCombo">0</div><div class="k">最 高 连 击</div></div>
+      <div class="item"><div class="v" id="rTop">0.0</div><div class="k">最 高 速 度</div></div>
+    </div>
+    <button class="diff" id="restart">再 来 一 局</button>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+// ====================== Game state ======================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const els = {
+  time:     document.getElementById('time'),
+  fillP:    document.getElementById('fillP'),
+  fillA:    document.getElementById('fillA'),
+  pctP:     document.getElementById('pctP'),
+  pctA:     document.getElementById('pctA'),
+  combo:    document.getElementById('combo'),
+  comboN:   document.getElementById('comboN'),
+  feedback: document.getElementById('feedback'),
+  keyL:     document.getElementById('keyL'),
+  keyR:     document.getElementById('keyR'),
+  spd:      document.getElementById('spd'),
+  count:    document.getElementById('count'),
+  start:    document.getElementById('startScreen'),
+  result:   document.getElementById('resultScreen'),
+  rTitle:   document.getElementById('resultTitle'),
+  rSub:     document.getElementById('resultSub'),
+  rTime:    document.getElementById('rTime'),
+  rCombo:   document.getElementById('rCombo'),
+  rTop:     document.getElementById('rTop'),
+  confetti: document.getElementById('confetti'),
+  restart:  document.getElementById('restart'),
+};
+
+const DIFF = {
+  easy:   { distance: 400, aiSpeed: 9.5,  aiVar: 1.2, label:'轻松' },
+  normal: { distance: 600, aiSpeed: 11.5, aiVar: 1.6, label:'常规' },
+  hard:   { distance: 800, aiSpeed: 13.5, aiVar: 2.0, label:'拼命' },
+};
+
+let state = null;
+
+function newGame(diffKey){
+  const cfg = DIFF[diffKey];
+  state = {
+    cfg,
+    diffKey,
+    phase:'countdown',     // countdown | running | finished
+    t: 0,                  // game time (s)
+    elapsed: 0,            // since start
+    player: {
+      pos: 0,              // metres
+      vel: 0,              // m/s
+      lastSide: null,      // 'L' | 'R'
+      lastStrokeAt: -999,
+      strokeInterval: 0.5, // expected interval (recalculated)
+      combo: 0,
+      maxCombo: 0,
+      maxSpeed: 0,
+      tilt: 0,             // visual tilt
+      paddleSwing: 0,      // -1..1
+      strokeFlash: 0,
+    },
+    ai: {
+      pos: 0,
+      vel: cfg.aiSpeed * 0.6,
+      target: cfg.aiSpeed,
+      paddlePhase: 0,
+    },
+    cameraX: 0,
+    decor: makeDecor(cfg.distance),
+    keys: { left:false, right:false },
+  };
+
+  // sync UI to fresh state immediately
+  updateHUD();
+  els.feedback.classList.remove('show');
+  els.feedback.textContent = '';
+}
+
+function makeDecor(distance){
+  // sprinkle lotus / bamboo / signposts every ~30 m
+  const items = [];
+  for (let m = 30; m < distance - 20; m += 18 + Math.random()*22){
+    const r = Math.random();
+    let type;
+    if (r < 0.35) type = 'lotus';
+    else if (r < 0.60) type = 'reed';
+    else if (r < 0.80) type = 'cloud';
+    else type = 'sign';
+    items.push({
+      m,
+      type,
+      yOff: (Math.random()-0.5) * 30,
+      seed: Math.random(),
+    });
+  }
+  // milestones every 100m
+  for (let m = 100; m < distance; m += 100){
+    items.push({ m, type:'mile', yOff: 0, seed: m });
+  }
+  return items.sort((a,b)=>a.m-b.m);
+}
+
+// ====================== Input ======================
+const keymap = {
+  'KeyA':'L', 'ArrowLeft':'L',
+  'KeyD':'R', 'ArrowRight':'R',
+};
+
+window.addEventListener('keydown', e=>{
+  if (!state) return;
+  const side = keymap[e.code];
+  if (!side) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  if (side==='L'){ state.keys.left = true;  els.keyL.classList.add('lit'); }
+  else           { state.keys.right = true; els.keyR.classList.add('lit'); }
+  if (state.phase === 'running') doStroke(side);
+});
+window.addEventListener('keyup', e=>{
+  if (!state) return;
+  const side = keymap[e.code];
+  if (!side) return;
+  if (side==='L'){ state.keys.left = false;  els.keyL.classList.remove('lit'); }
+  else           { state.keys.right = false; els.keyR.classList.remove('lit'); }
+});
+
+function doStroke(side){
+  const p = state.player;
+  const t = state.t;
+  const dt = t - p.lastStrokeAt;
+
+  let quality;        // 'perfect' | 'good' | 'soso' | 'bad'
+  let speedKick = 0;  // velocity boost from this stroke
+  let comboDelta = 0;
+
+  // same-side spam → bad
+  if (p.lastSide === side){
+    quality = 'bad';
+    speedKick = -1.4;
+    comboDelta = -p.combo;     // reset combo
+    flashFeedback('乱  桨  !', '#ff8b6c');
+  } else if (dt > 1.2){
+    // too slow between strokes
+    quality = 'soso';
+    speedKick = 1.6;
+    comboDelta = -Math.min(p.combo, 3);
+    flashFeedback('脱  拍', '#f5d27a');
+  } else {
+    // good alternation; judge tightness vs expected interval
+    // expected = previous interval (rolling) target ~0.4s
+    const expected = p.strokeInterval || 0.45;
+    const err = Math.abs(dt - expected);
+    if (err < 0.10){
+      quality = 'perfect';
+      speedKick = 4.6;
+      comboDelta = +1;
+      flashFeedback('完  美 !', '#fff1a8');
+    } else if (err < 0.22){
+      quality = 'good';
+      speedKick = 3.2;
+      comboDelta = +1;
+      flashFeedback('好  桨 !', '#ffd070');
+    } else {
+      quality = 'soso';
+      speedKick = 2.0;
+      comboDelta = 0;
+      flashFeedback('一  般', '#cfd0d2');
+    }
+    // smooth toward this interval (so player can choose own tempo)
+    p.strokeInterval = p.strokeInterval
+      ? p.strokeInterval * 0.7 + dt * 0.3
+      : dt;
+  }
+
+  // apply
+  p.vel = Math.max(0, p.vel + speedKick);
+  // combo bonus: small extra velocity per 5 combo
+  if (quality === 'perfect' || quality === 'good'){
+    p.combo = Math.max(0, p.combo + comboDelta);
+    if (p.combo > 0 && p.combo % 5 === 0){
+      p.vel += 1.2;
+      flashFeedback(p.combo + '  连 击 !', '#ffd070', 720);
+    }
+  } else {
+    p.combo = Math.max(0, p.combo + comboDelta);
+  }
+
+  if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+  if (p.vel  > p.maxSpeed)  p.maxSpeed = p.vel;
+
+  p.lastSide = side;
+  p.lastStrokeAt = t;
+  p.paddleSwing = (side === 'L') ? -1 : 1;
+  p.strokeFlash = 1;
+  p.tilt = (side === 'L' ? -1 : 1) * 0.18;
+
+  els.combo.classList.add('flash');
+  setTimeout(()=>els.combo.classList.remove('flash'), 120);
+}
+
+let feedbackTimer = null;
+function flashFeedback(txt, color, dur=600){
+  els.feedback.textContent = txt;
+  els.feedback.style.color = color;
+  els.feedback.classList.remove('show');
+  void els.feedback.offsetWidth;
+  els.feedback.classList.add('show');
+  if (feedbackTimer) clearTimeout(feedbackTimer);
+  feedbackTimer = setTimeout(()=>els.feedback.classList.remove('show'), dur);
+}
+
+// ====================== Loop ======================
+let lastT = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - lastT)/1000);
+  lastT = now;
+
+  if (state){
+    if (state.phase === 'running') update(dt);
+    render();
+    updateHUD();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+function update(dt){
+  state.t += dt;
+  state.elapsed += dt;
+
+  const p = state.player;
+  const a = state.ai;
+  const cfg = state.cfg;
+
+  // player physics: drag pulls velocity down toward 0; strokes inject velocity
+  p.vel -= dt * (p.vel * 0.85 + 0.6);   // water drag
+  if (p.vel < 0) p.vel = 0;
+  p.pos += p.vel * dt;
+
+  // visual decay
+  p.tilt *= Math.pow(0.001, dt);
+  p.paddleSwing *= Math.pow(0.0005, dt);
+  p.strokeFlash = Math.max(0, p.strokeFlash - dt*3);
+
+  // combo decays if no stroke for >1.6s
+  if (state.t - p.lastStrokeAt > 1.6 && p.combo > 0){
+    p.combo = Math.max(0, p.combo - 1);
+    p.lastStrokeAt = state.t - 0.8; // throttle
+  }
+
+  // AI: oscillates around target, occasional surge / stumble
+  a.target = cfg.aiSpeed + Math.sin(state.t*0.7) * cfg.aiVar
+                       + (Math.random() < 0.005 ? (Math.random()*3-1) : 0);
+  // smoothing
+  a.vel += (a.target - a.vel) * Math.min(1, dt*1.6);
+  a.pos += a.vel * dt;
+  a.paddlePhase += dt * (a.vel * 0.9);
+
+  // win/lose
+  if (p.pos >= cfg.distance && a.pos < cfg.distance){
+    finish('win');
+  } else if (a.pos >= cfg.distance && p.pos < cfg.distance){
+    finish('lose');
+  } else if (p.pos >= cfg.distance && a.pos >= cfg.distance){
+    finish( p.pos > a.pos ? 'win' : 'lose' );
+  }
+
+  // camera follows player (slight lead)
+  state.cameraX = p.pos;
+}
+
+function finish(result){
+  if (state.phase === 'finished') return;
+  state.phase = 'finished';
+  state.result = result;
+
+  els.rTime.textContent  = state.elapsed.toFixed(2);
+  els.rCombo.textContent = state.player.maxCombo;
+  els.rTop.textContent   = state.player.maxSpeed.toFixed(1);
+
+  els.result.classList.remove('hidden','win','lose');
+  els.result.classList.add(result);
+  if (result === 'win'){
+    els.rTitle.textContent = '夺  魁  !';
+    els.rSub.textContent   = '端 午 安 康 · 龙 舟 第 一';
+    spawnConfetti(80);
+  } else {
+    els.rTitle.textContent = '惜  败';
+    els.rSub.textContent   = '别 灰 心  ·  再 划 一 程';
+    els.confetti.innerHTML = '';
+  }
+}
+
+function spawnConfetti(n){
+  els.confetti.innerHTML = '';
+  for (let i=0;i<n;i++){
+    const s = document.createElement('span');
+    s.style.left = (Math.random()*100) + '%';
+    s.style.animationDelay = (-Math.random()*2.6) + 's';
+    s.style.animationDuration = (1.8 + Math.random()*1.6) + 's';
+    s.style.transform = `rotate(${Math.random()*360}deg)`;
+    els.confetti.appendChild(s);
+  }
+}
+
+// ====================== HUD update ======================
+function updateHUD(){
+  if (!state) return;
+  const p = state.player, a = state.ai, cfg = state.cfg;
+  const pp = Math.min(100, p.pos / cfg.distance * 100);
+  const ap = Math.min(100, a.pos / cfg.distance * 100);
+  els.fillP.style.width = pp + '%';
+  els.fillA.style.width = ap + '%';
+  els.pctP.textContent  = pp.toFixed(0) + '%';
+  els.pctA.textContent  = ap.toFixed(0) + '%';
+  els.time.textContent  = state.elapsed.toFixed(2);
+  els.comboN.textContent= p.combo;
+  els.spd.textContent   = p.vel.toFixed(1);
+}
+
+// ====================== Render ======================
+const PX_PER_M = 36;   // metres → pixels in world space
+const BOAT_SCREEN_X = W * 0.32;  // player boat fixed screen X
+const BOAT_Y = H * 0.62;
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  drawSun();
+  drawClouds();
+  drawDistantHills();
+  drawWater();
+  drawDecor();
+  drawAIBoat();           // AI in farther lane (drawn first → behind)
+  drawFinishLine();        // banner over the river
+  drawPlayerBoat();        // player on top
+  drawWaterFront();
+  drawVignette();
+}
+
+function drawSky(){
+  const g = ctx.createLinearGradient(0,0,0,H*0.7);
+  g.addColorStop(0,   '#fff1d0');
+  g.addColorStop(0.5, '#ffd58f');
+  g.addColorStop(1,   '#ffba6e');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H*0.7);
+}
+
+function drawSun(){
+  const cx = W*0.78, cy = H*0.22, r = 60;
+  const grad = ctx.createRadialGradient(cx-10, cy-10, 6, cx, cy, r);
+  grad.addColorStop(0, '#ffe27a');
+  grad.addColorStop(0.7, '#d8443c');
+  grad.addColorStop(1, '#9c241d');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+
+  // halo
+  ctx.strokeStyle = 'rgba(255,220,150,.35)';
+  ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.arc(cx,cy,r+12,0,Math.PI*2); ctx.stroke();
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = 'rgba(255,220,150,.18)';
+  ctx.beginPath(); ctx.arc(cx,cy,r+26,0,Math.PI*2); ctx.stroke();
+}
+
+function drawClouds(){
+  const t = state.t;
+  const offset = -state.cameraX * 6;
+  drawCloud((100 + offset*0.05) % (W+200) - 100, 80, 1.0);
+  drawCloud((400 + offset*0.05) % (W+200) - 100, 130, 0.85);
+  drawCloud((760 + offset*0.05) % (W+200) - 100, 60,  1.1);
+}
+function drawCloud(x,y,s){
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(s,s);
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#f3c98a';
+  ctx.lineWidth = 2;
+  for (const [cx,cy,rx,ry] of [[20,18,22,14],[50,10,28,18],[80,20,22,12]]){
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDistantHills(){
+  const baseY = H*0.55;
+  const off = -state.cameraX * 8;       // far parallax
+  ctx.fillStyle = '#9fb98c';
+  drawHillRow(off, baseY, 280, 80, '#9fb98c');
+  ctx.fillStyle = '#7ea36b';
+  drawHillRow(off*1.6 + 90, baseY+12, 220, 60, '#7ea36b');
+}
+function drawHillRow(off, baseY, period, height, color){
+  ctx.fillStyle = color;
+  for (let x = -period; x < W+period; x += period){
+    const px = ((x + off) % (period*4) + period*4) % (period*4) - period;
+    ctx.beginPath();
+    ctx.moveTo(px, baseY);
+    ctx.bezierCurveTo(px+period*0.25, baseY-height, px+period*0.75, baseY-height, px+period, baseY);
+    ctx.lineTo(px+period, baseY+10);
+    ctx.lineTo(px, baseY+10);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawWater(){
+  const top = H*0.60;
+  const grad = ctx.createLinearGradient(0,top,0,H);
+  grad.addColorStop(0,   '#bfe7f2');
+  grad.addColorStop(0.4, '#4ea6c2');
+  grad.addColorStop(1,   '#1d4d63');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, top, W, H-top);
+
+  // moving wave lines (parallax with camera)
+  const t = state.t;
+  ctx.strokeStyle = 'rgba(255,255,255,.55)';
+  ctx.lineWidth = 2;
+  for (let row=0; row<6; row++){
+    const y = top + 18 + row * (H-top-30) / 6;
+    const speed = 30 + row*20;
+    const off = ((-state.cameraX * (10 + row*6) + t*speed) % 80 + 80) % 80;
+    ctx.beginPath();
+    for (let x=-80; x<W+80; x+=80){
+      const xx = x + off;
+      ctx.moveTo(xx, y);
+      ctx.bezierCurveTo(xx+20, y-3, xx+40, y-3, xx+60, y);
+    }
+    ctx.globalAlpha = 0.6 - row*0.07;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function worldToScreen(m){
+  return BOAT_SCREEN_X + (m - state.cameraX) * PX_PER_M;
+}
+
+function drawDecor(){
+  for (const it of state.decor){
+    const sx = worldToScreen(it.m);
+    if (sx < -120 || sx > W+120) continue;
+    if (it.type === 'lotus')      drawLotus(sx, H*0.78 + it.yOff, it.seed);
+    else if (it.type === 'reed')  drawReed(sx,  H*0.66 + it.yOff*0.3, it.seed);
+    else if (it.type === 'cloud') {/* clouds drawn in sky pass */}
+    else if (it.type === 'sign')  drawSignpost(sx, H*0.62, it.seed);
+    else if (it.type === 'mile')  drawMilestone(sx, H*0.62, it.m);
+  }
+}
+
+function drawLotus(x,y,seed){
+  ctx.save();
+  ctx.translate(x,y);
+  // pad
+  ctx.fillStyle = '#3e7a36';
+  ctx.beginPath(); ctx.ellipse(0,0,28,10,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#235d20'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(0,0,28,10,0,0,Math.PI*2); ctx.stroke();
+  // flower
+  ctx.fillStyle = (seed > 0.5) ? '#ffb6c1' : '#fff';
+  for (let k=0;k<5;k++){
+    const a = (k/5)*Math.PI*2;
+    ctx.save(); ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(0,-12,8,16,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle = '#f1c84a';
+  ctx.beginPath(); ctx.arc(0,-8,5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawReed(x,y,seed){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#3e7a36';
+  ctx.lineWidth = 3;
+  for (let i=0;i<4;i++){
+    const sw = (seed*7 + i)%1 - 0.5;
+    ctx.beginPath();
+    ctx.moveTo(i*4-6, 0);
+    ctx.quadraticCurveTo(i*4-6 + sw*8, -22, i*4-6 + sw*4, -42);
+    ctx.stroke();
+  }
+  // tip
+  ctx.fillStyle = '#caa64a';
+  for (let i=0;i<4;i++){
+    const sw = (seed*7 + i)%1 - 0.5;
+    ctx.beginPath();
+    ctx.ellipse(i*4-6 + sw*4, -42, 2, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawSignpost(x,y,seed){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.fillStyle = '#7a3c19';
+  ctx.fillRect(-2,-50, 4, 50);
+  ctx.fillStyle = '#d8443c';
+  ctx.strokeStyle = '#5a1410'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(-22,-46); ctx.lineTo(22,-46); ctx.lineTo(28,-32); ctx.lineTo(-22,-32); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff7df';
+  ctx.font = '600 14px "ZCOOL QingKe HuangYou", serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText( (seed>.5?'加油':'再快'), 0, -39);
+  ctx.restore();
+}
+
+function drawMilestone(x,y,m){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.fillStyle = '#fff7df';
+  ctx.strokeStyle = '#9c241d';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.roundRect(-26, -64, 52, 36, 6);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#9c241d';
+  ctx.font = '700 18px "ZCOOL QingKe HuangYou", serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(m+'m', 0, -46);
+  // pole
+  ctx.fillStyle = '#7a3c19';
+  ctx.fillRect(-2, -28, 4, 28);
+  ctx.restore();
+}
+
+function drawFinishLine(){
+  const sx = worldToScreen(state.cfg.distance);
+  if (sx < -100 || sx > W + 200) return;
+
+  // banner over the river
+  ctx.save();
+  ctx.translate(sx, 0);
+  // posts
+  ctx.fillStyle = '#7a3c19';
+  ctx.fillRect(-58, H*0.38, 8, H*0.30);
+  ctx.fillRect( 50, H*0.38, 8, H*0.30);
+  // banner
+  ctx.fillStyle = '#d8443c';
+  ctx.strokeStyle = '#5a1410';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.roundRect(-78, H*0.32, 156, 60, 8);
+  ctx.fill(); ctx.stroke();
+  // text
+  ctx.fillStyle = '#fff7df';
+  ctx.font = '700 32px "Ma Shan Zheng", serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('终  点', 0, H*0.32 + 33);
+  // checker pattern under banner
+  for (let i=0;i<7;i++){
+    ctx.fillStyle = (i%2===0) ? '#fff' : '#1a1208';
+    ctx.fillRect(-70 + i*20, H*0.4, 20, 6);
+  }
+  ctx.restore();
+}
+
+function drawAIBoat(){
+  const a = state.ai;
+  // AI sits in a far lane: smaller scale, higher up, and visually offset
+  const sx = worldToScreen(a.pos) - 60;       // slight x offset so they don't perfectly overlap
+  if (sx < -260 || sx > W+260) return;
+  drawDragonBoat(sx, BOAT_Y - 130, 0.62, {
+    isAI: true,
+    paddlePhase: a.paddlePhase,
+    tilt: Math.sin(state.t*3) * 0.06,
+    bob:  Math.sin(state.t*2) * 3,
+  });
+}
+
+function drawPlayerBoat(){
+  const p = state.player;
+  drawDragonBoat(BOAT_SCREEN_X, BOAT_Y, 1.0, {
+    isAI: false,
+    paddlePhase: state.t * Math.max(2, p.vel*0.6),
+    paddleSwing: p.paddleSwing,
+    strokeFlash: p.strokeFlash,
+    tilt: p.tilt + Math.sin(state.t*2.6) * 0.04,
+    bob: Math.sin(state.t*2.6) * 5,
+  });
+}
+
+function drawDragonBoat(cx, cy, scale, opts){
+  ctx.save();
+  ctx.translate(cx, cy + (opts.bob || 0));
+  ctx.rotate(opts.tilt || 0);
+  ctx.scale(scale, scale);
+
+  // wake / splash under boat
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  for (let i=0;i<5;i++){
+    const fx = -160 + i*70;
+    const fy = 84 + Math.sin(state.t*4 + i) * 2;
+    ctx.beginPath();
+    ctx.ellipse(fx, fy, 28 - i*2, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // hull shadow on water
+  ctx.fillStyle = 'rgba(20,60,80,.30)';
+  ctx.beginPath();
+  ctx.ellipse(0, 96, 220, 14, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // hull
+  const hullGrad = ctx.createLinearGradient(0,40,0,100);
+  hullGrad.addColorStop(0, '#a85a2c');
+  hullGrad.addColorStop(0.6, '#7a3c19');
+  hullGrad.addColorStop(1, '#4d2210');
+  ctx.fillStyle = hullGrad;
+  ctx.strokeStyle = '#3a1a0c';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-200, 40);
+  ctx.quadraticCurveTo(-230, 92, -170, 100);
+  ctx.lineTo(170, 100);
+  ctx.quadraticCurveTo(225, 92, 200, 40);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // gold trim
+  ctx.strokeStyle = '#f1c84a';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-188,46); ctx.lineTo(188,46); ctx.stroke();
+  ctx.strokeStyle = 'rgba(241,200,74,.6)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-180,60); ctx.lineTo(180,60); ctx.stroke();
+  // dots
+  ctx.fillStyle = '#ffd070';
+  for (let i=-3;i<=3;i++){
+    ctx.beginPath(); ctx.arc(i*48, 76, 3, 0, Math.PI*2); ctx.fill();
+  }
+
+  // dragon TAIL (left)
+  ctx.save();
+  ctx.translate(-200, 28);
+  ctx.fillStyle = opts.isAI ? '#3f6655' : '#9c241d';
+  ctx.strokeStyle = '#3a0a08'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(0,30);
+  ctx.bezierCurveTo(-30,10, -10,-12, 8,-4);
+  ctx.bezierCurveTo(20, 10, 8, 20, 30, 30);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // DRAGON HEAD (right)
+  drawDragonHead(opts.isAI);
+
+  // ZONGZI rowers (3 sit on the boat)
+  const phase = opts.paddlePhase || 0;
+  for (let i=0; i<3; i++){
+    const px = -100 + i*80;
+    const personPhase = phase + i*0.25;
+    drawZongzi(px, -8, personPhase, i, opts);
+  }
+
+  // central pole + flag
+  ctx.fillStyle = '#3a1a0c';
+  ctx.fillRect(-2, -90, 4, 130);
+  ctx.fillStyle = opts.isAI ? '#2f6e5a' : '#d8443c';
+  ctx.strokeStyle = '#5a1410'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.roundRect(2, -88, 36, 24, 3);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff7df';
+  ctx.font = '700 18px "Ma Shan Zheng", serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(opts.isAI ? '龙' : '粽', 20, -76);
+
+  ctx.restore();
+}
+
+function drawDragonHead(isAI){
+  ctx.save();
+  ctx.translate(160, 0);
+  // mane
+  ctx.fillStyle = isAI ? '#1a4438' : '#7a1a16';
+  ctx.strokeStyle = '#3a0a08'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(-30,30); ctx.quadraticCurveTo(-60,0,-30,-10);
+  ctx.quadraticCurveTo(-35,20,-10,5);
+  ctx.quadraticCurveTo(-15,30,10,18);
+  ctx.quadraticCurveTo(0,38,20,30);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // horns
+  ctx.fillStyle = '#caa64a';
+  ctx.beginPath();
+  ctx.moveTo(0,-12); ctx.quadraticCurveTo(10,-46,30,-50);
+  ctx.quadraticCurveTo(28,-30,18,-22); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // head
+  const grad = ctx.createRadialGradient(-10,-4, 8, 30, 20, 90);
+  if (isAI){
+    grad.addColorStop(0, '#7fcfb6');
+    grad.addColorStop(0.6, '#3f8a77');
+    grad.addColorStop(1, '#1f4438');
+  } else {
+    grad.addColorStop(0, '#ff7c6a');
+    grad.addColorStop(0.55, '#d8443c');
+    grad.addColorStop(1, '#7d1d18');
+  }
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = '#3a0a08';
+  ctx.beginPath();
+  ctx.moveTo(-20,42);
+  ctx.quadraticCurveTo(-30,0,30,-10);
+  ctx.quadraticCurveTo(80,-10,90,30);
+  ctx.quadraticCurveTo(95,60,65,80);
+  ctx.quadraticCurveTo(20,90,-10,80);
+  ctx.quadraticCurveTo(-25,60,-20,42);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // gold scale arches
+  ctx.strokeStyle = '#f6d77a'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for (let i=0;i<4;i++){
+    const x = 5 + i*16;
+    ctx.moveTo(x,28); ctx.quadraticCurveTo(x+8, 22, x+16, 28);
+  }
+  ctx.stroke();
+
+  // eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(40, 30, 11, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1a1208';
+  ctx.beginPath(); ctx.arc(42, 32, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(40, 30, 1.6, 0, Math.PI*2); ctx.fill();
+
+  // brow
+  ctx.strokeStyle = '#3a0a08'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(28,16); ctx.quadraticCurveTo(40,8,56,18); ctx.stroke();
+
+  // mouth + tooth
+  ctx.beginPath(); ctx.moveTo(70,62); ctx.quadraticCurveTo(80,72,94,58); ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(76,62); ctx.lineTo(80,72); ctx.lineTo(84,62); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // whiskers
+  ctx.strokeStyle = '#caa64a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(96,52); ctx.quadraticCurveTo(118,46,136,56); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(96,66); ctx.quadraticCurveTo(118,72,138,64); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawZongzi(x, y, phase, idx, opts){
+  ctx.save();
+  ctx.translate(x, y);
+
+  // body lean
+  const lean = Math.sin(phase) * 0.12;
+  ctx.rotate(lean);
+
+  // zongzi triangle body
+  const leafGrad = ctx.createLinearGradient(-30,-40,30,30);
+  leafGrad.addColorStop(0, '#79b357');
+  leafGrad.addColorStop(0.7, '#4a8a3a');
+  leafGrad.addColorStop(1, '#265e22');
+  ctx.fillStyle = leafGrad;
+  ctx.strokeStyle = '#1d4a18';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -38);
+  ctx.lineTo(38, 30);
+  ctx.lineTo(-38, 30);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // leaf overlap
+  ctx.fillStyle = 'rgba(255,255,255,.13)';
+  ctx.beginPath();
+  ctx.moveTo(0, -38); ctx.lineTo(20, 0); ctx.lineTo(-20, 0); ctx.closePath();
+  ctx.fill();
+
+  // tied string
+  ctx.strokeStyle = '#f6d77a';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-30, 12); ctx.quadraticCurveTo(0, 6, 30, 12); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, 6); ctx.lineTo(0, -10); ctx.stroke();
+
+  // face
+  ctx.fillStyle = '#f5e6c4';
+  ctx.strokeStyle = '#b89759'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 8, 16, 12, 0, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+
+  // face variants
+  const expr = idx;
+  if (expr === 0){
+    // determined eyes + small frown
+    ctx.fillStyle = '#1a1208';
+    ctx.beginPath(); ctx.arc(-6, 6, 2.4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 6, 6, 2.4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#1a1208'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(-10,2); ctx.lineTo(-2,4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 2,4); ctx.lineTo(10,2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-3,14); ctx.lineTo(3,14); ctx.stroke();
+  } else if (expr === 1){
+    // happy ^ ^
+    ctx.strokeStyle = '#1a1208'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-9, 6); ctx.quadraticCurveTo(-6,2,-3,6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 3, 6); ctx.quadraticCurveTo( 6,2, 9,6); ctx.stroke();
+    ctx.fillStyle = '#7d1d18';
+    ctx.beginPath(); ctx.ellipse(0, 14, 3, 2, 0, 0, Math.PI*2); ctx.fill();
+  } else {
+    // dot eyes + smile
+    ctx.fillStyle = '#1a1208';
+    ctx.beginPath(); ctx.arc(-6, 6, 2.3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 6, 6, 2.3, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#1a1208'; ctx.lineWidth=1.6;
+    ctx.beginPath();
+    ctx.moveTo(-4,13); ctx.quadraticCurveTo(0,16,4,13); ctx.stroke();
+  }
+  // blush
+  ctx.fillStyle = 'rgba(255,154,122,.7)';
+  ctx.beginPath(); ctx.ellipse(-10, 12, 2.4, 1.6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse( 10, 12, 2.4, 1.6, 0, 0, Math.PI*2); ctx.fill();
+
+  // arms + paddle
+  const swing = Math.sin(phase) * 0.9;            // -1..1
+  const flash = opts.strokeFlash || 0;
+  // left paddle
+  ctx.save();
+  ctx.translate(-22, 18);
+  ctx.rotate(-0.4 + swing*0.7);
+  drawPaddle();
+  ctx.restore();
+  // right paddle
+  ctx.save();
+  ctx.translate(22, 18);
+  ctx.rotate(0.4 + swing*0.7);
+  ctx.scale(-1,1);
+  drawPaddle();
+  ctx.restore();
+
+  // splash on stroke flash (player only)
+  if (!opts.isAI && flash > 0.2){
+    ctx.fillStyle = `rgba(255,255,255,${flash})`;
+    for (let i=0;i<6;i++){
+      const sx = (Math.random()-0.5)*60;
+      const sy = 50 + Math.random()*16;
+      ctx.beginPath(); ctx.arc(sx, sy, 2 + Math.random()*3, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawPaddle(){
+  ctx.fillStyle = '#7a4319';
+  ctx.strokeStyle = '#3a1a0c';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(-2, 0, 4, 50, 1);
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(0, 58, 9, 14, 0, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+}
+
+function drawWaterFront(){
+  // foam edge near boat
+  const t = state.t;
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  for (let i=0;i<8;i++){
+    const x = (BOAT_SCREEN_X - 240 + i*60 + ((t*60)%60)) ;
+    const y = BOAT_Y + 90 + Math.sin(t*4 + i) * 3;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 22, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawVignette(){
+  const g = ctx.createRadialGradient(W/2, H/2, H*0.4, W/2, H/2, H*0.85);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(40,15,0,.32)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+}
+
+// roundRect polyfill (older browsers)
+if (!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    if (typeof r === 'number') r = [r,r,r,r];
+    this.beginPath();
+    this.moveTo(x+r[0], y);
+    this.lineTo(x+w-r[1], y);
+    this.quadraticCurveTo(x+w, y, x+w, y+r[1]);
+    this.lineTo(x+w, y+h-r[2]);
+    this.quadraticCurveTo(x+w, y+h, x+w-r[2], y+h);
+    this.lineTo(x+r[3], y+h);
+    this.quadraticCurveTo(x, y+h, x, y+h-r[3]);
+    this.lineTo(x, y+r[0]);
+    this.quadraticCurveTo(x, y, x+r[0], y);
+    this.closePath();
+    return this;
+  };
+}
+
+// ====================== Flow ======================
+document.querySelectorAll('.diff').forEach(b=>{
+  if (b.id === 'restart') return;
+  b.addEventListener('click', ()=>{
+    const d = b.dataset.diff;
+    els.start.classList.add('hidden');
+    startCountdown(d);
+  });
+});
+
+els.restart.addEventListener('click', ()=>{
+  els.result.classList.add('hidden');
+  els.start.classList.remove('hidden');
+});
+
+function startCountdown(diffKey){
+  newGame(diffKey);
+  let n = 3;
+  const tick = ()=>{
+    if (n > 0){
+      els.count.textContent = n;
+      els.count.classList.remove('show');
+      void els.count.offsetWidth;
+      els.count.classList.add('show');
+      n--;
+      setTimeout(tick, 900);
+    } else {
+      els.count.textContent = '划!';
+      els.count.classList.remove('show');
+      void els.count.offsetWidth;
+      els.count.classList.add('show');
+      state.phase = 'running';
+      state.elapsed = 0;
+      state.player.lastStrokeAt = state.t - 0.5;
+    }
+  };
+  tick();
+}
+
+// boot: render once even before game start (decorative idle)
+state = {
+  t: 0, elapsed: 0, phase:'idle',
+  cfg: DIFF.normal,
+  player: { pos: 30, vel: 0, paddleSwing: 0, tilt: 0, strokeFlash:0, combo:0, maxCombo:0, maxSpeed:0, lastStrokeAt:-999 },
+  ai:     { pos: 25, vel: 0, paddlePhase: 0 },
+  cameraX: 30,
+  decor: makeDecor(600),
+};
+function idleLoop(now){
+  if (!state) return;
+  const dt = Math.min(0.05, (now - lastT)/1000);
+  lastT = now;
+  if (state.phase === 'idle'){
+    state.t += dt;
+    state.player.paddleSwing = Math.sin(state.t*2);
+    state.ai.paddlePhase += dt * 2;
+    state.cameraX = state.player.pos;
+    render();
+    requestAnimationFrame(idleLoop);
+  }
+}
+requestAnimationFrame(idleLoop);
+
+</script>
+</body>
+</html>
