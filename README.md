@@ -4,7 +4,7 @@
 
 ## 在线游玩
 
-👉 https://camille1223.github.io/-/
+👉 [https://camille1223.github.io/-/](https://camille1223.github.io/Rice-dumplings-fighting/)
 
 ## 玩法
 
